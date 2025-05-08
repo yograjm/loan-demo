@@ -1,0 +1,10 @@
+numpy
+pandas
+scikit-learn
+gradio
+
+# dvc==3.55.2
+# dvc-ssh==4.1.1
+# asyncssh==2.18.0
+
+mlflow
