@@ -1,0 +1,112 @@
+name: CICD Pipeline
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  train:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v3
+      with:
+        python-version: '3.10'
+    - name: Install dependencies
+      run: |
+        cd loan_defaulter_pred
+        pip install -r requirements/requirements.txt
+    - name: Train and save pipeline
+      env:
+        DATA_VERSION: v1.1
+        GH_USERNAME: ${{ secrets.GH_USERNAME }}
+        GH_ACCESS_TOKEN: ${{ secrets.GH_ACCESS_TOKEN }}
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        #MLFLOW_TRACKING_URI: http://13.201.73.24:5000/
+        #MLFLOW_TRACKING_USERNAME: ${{ secrets.MLFLOW_TRACKING_USERNAME }}
+        #MLFLOW_TRACKING_PASSWORD: ${{ secrets.MLFLOW_TRACKING_PASSWORD }}
+        # GIT_COMMIT_MSG: ${{ github.event.head_commit.message }}
+      run: python train_model.py
+#    - uses: actions/upload-artifact@v2
+#      with:
+#        name: my-trained-pipeline
+#        path: titanic_model/trained_models/*.pkl
+#        retention-days: 1
+
+  test:
+    needs: train
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v3
+      with:
+        python-version: '3.10'
+#    - uses: actions/download-artifact@v2
+#      with:
+#        name: my-trained-pipeline
+#        path: titanic_model/trained_models
+    - name: Install dependencies
+      run: |
+        cd loan_defaulter_pred
+        pip install -r requirements/test_requirements.txt
+    - name: Test with pytest
+      env:
+        DATA_VERSION: v1.1
+        GH_USERNAME: ${{ secrets.GH_USERNAME }}
+        GH_ACCESS_TOKEN: ${{ secrets.GH_ACCESS_TOKEN }}
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      run: pytest -p no:warnings
+
+  push-image:
+    needs: [train, test]
+    runs-on: ubuntu-latest
+    steps:
+    - name: Repo Checkout
+      uses: actions/checkout@v3
+
+    - name: Login to Docker hub
+      env:
+        DOCKER_USER: ${{ secrets.DOCKER_USER_NAME }}
+        DOCKER_PASSWORD: ${{ secrets.DOCKER_PASS_TOKEN }}
+      run: docker login -u $DOCKER_USER -p $DOCKER_PASSWORD 
+
+    - name: Build the Docker image for app
+      env:
+        DOCKER_USER: ${{ secrets.DOCKER_USER_NAME }}
+      run: docker build . -f Dockerfile -t $DOCKER_USER/loan-default-pred:latest
+
+    - name: Push the Docker Image
+      env:
+        DOCKER_USER: ${{ secrets.DOCKER_USER_NAME }}
+      run: docker push $DOCKER_USER/loan-default-pred
+
+    - name: Logout to Docker hub
+      run: docker logout
+
+
+  # deploy:
+  #   needs: [train, test, build, push-image]
+  #   runs-on: self-hosted
+
+  #   steps:
+  #     - name: Pull Docker Image
+  #       env: 
+  #         DOCKER_USER: ${{ secrets.DOCKER_USER_NAME }}
+  #       run: sudo docker pull $DOCKER_USER/loan-default-pred:latest
+    
+  #     - name: Delete Old Docker Container
+  #       run: sudo docker rm -f loan-container || true
+    
+  #     - name: Run Docker Container
+  #       env: 
+  #         DOCKER_USER: ${{ secrets.DOCKER_USER_NAME }}
+  #       run: sudo docker run -it -d -p 8001:8001 --name loan-container $DOCKER_USER/loan-default-pred:latest
