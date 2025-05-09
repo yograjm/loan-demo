@@ -3,4 +3,4 @@
 fastapi
 uvicorn
 
-# prometheus-client     # for monitoring purpose
+prometheus-client     # for monitoring purpose
