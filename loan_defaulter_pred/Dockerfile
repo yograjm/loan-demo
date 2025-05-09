@@ -2,8 +2,6 @@
 FROM python:3.10-slim
 
 # requirements installed
-# ADD dataset/ dataset/
-ADD trained_model/*.pkl trained_model/
 ADD requirements/ requirements/
 
 RUN pip install -r requirements/api_requirements.txt

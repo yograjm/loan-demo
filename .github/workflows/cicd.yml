@@ -99,20 +99,20 @@ jobs:
       run: docker logout
 
 
-  # deploy:
-  #   needs: [train, test, build, push-image]
-  #   runs-on: self-hosted
+  deploy:
+    needs: [train, test, push-image]
+    runs-on: self-hosted
 
-  #   steps:
-  #     - name: Pull Docker Image
-  #       env: 
-  #         DOCKER_USER: ${{ secrets.DOCKER_USER_NAME }}
-  #       run: sudo docker pull $DOCKER_USER/loan-default-pred:latest
+    steps:
+      - name: Pull Docker Image
+        env: 
+          DOCKER_USER: ${{ secrets.DOCKER_USER_NAME }}
+        run: sudo docker pull $DOCKER_USER/loan-default-pred:latest
     
-  #     - name: Delete Old Docker Container
-  #       run: sudo docker rm -f loan-container || true
+      - name: Delete Old Docker Container
+        run: sudo docker rm -f loan-container || true
     
-  #     - name: Run Docker Container
-  #       env: 
-  #         DOCKER_USER: ${{ secrets.DOCKER_USER_NAME }}
-  #       run: sudo docker run -it -d -p 8001:8001 --name loan-container $DOCKER_USER/loan-default-pred:latest
+      - name: Run Docker Container
+        env: 
+          DOCKER_USER: ${{ secrets.DOCKER_USER_NAME }}
+        run: sudo docker run -it -d -p 8080:8080 --name loan-container $DOCKER_USER/loan-default-pred:latest
