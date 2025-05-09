@@ -1,39 +1,36 @@
 import numpy as np
 import pandas as pd
 
-df = pd.read_csv("dataset/credit_risk_dataset.csv")
+# df = pd.read_csv("dataset/credit_risk_dataset.csv")
 
 
 ############## DVC related code START ############################
 
-# import os
+import os
 
-# # Provide credentials and save them as environment variables. Later, whenever needed, access the credentials using environment variables only.
-##
+# Provide credentials and save them as environment variables. Later, whenever needed, access the credentials using environment variables only.
 
 
-# import dvc.api
-# import pandas as pd
+import dvc.api
+import pandas as pd
 
-# gtlb_username = os.environ['GTLB_USERNAME']
-# gtlb_access_token = os.environ['GTLB_ACCESS_TOKEN']
 
-# repo_name = "loan-data-repo"     # Change as per your GitLab repository name
+repo_name = "credit-risk-data"     # Change as per your GitHub repository name
+repo_url = 'https://' + os.environ['GH_USERNAME'] + ':' + os.environ['GH_ACCESS_TOKEN'] + '@github.com/' + os.environ['GH_USERNAME'] + '/' + repo_name
+# print(repo_url)
 
-# repo_url = 'https://' + gtlb_username + ':' + gtlb_access_token + '@gitlab.com/' + gtlb_username + '/' + repo_name
-# # print(repo_url)
+# Data version to retrieve
+data_revision = 'v1.1'
 
-# # Data version to retrieve
-# data_revision = 'v1.1'
+# Configurations to access remote storage
+remote_config = {
+    'access_key_id': os.environ["AWS_ACCESS_KEY_ID"],
+    'secret_access_key': os.environ["AWS_SECRET_ACCESS_KEY"],
+}
 
-# # Configurations to access remote storage
-# remote_config = {
-#     'password': os.environ["VM_PASSWORD"]
-#     }
-
-# # Open data file using dvc-api and load the dataset
-# with dvc.api.open('data/credit_risk_dataset.csv', repo=repo_url, rev=data_revision, remote_config=remote_config) as file:  #remote_config=remote_config) as file:
-#     df = pd.read_csv(file)
+# Open data file using dvc-api and load the dataset
+with dvc.api.open('data/credit_risk_dataset.csv', repo=repo_url, rev=data_revision, remote_config=remote_config) as file:
+    df = pd.read_csv(file)
 
 # print(df.tail())
 
